@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tháp Hà Nội</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header id = "header">
+    <div class="logo">
+      <img src="assets/logo.png" alt="Logo Tháp Hà Nội" class="Logo-img"/>
+      <span>Tháp Hà Nội</span>
+    </div>
+    <nav>
+      <a href="#" class="active">Trang chủ</a>
+      <a href="#" id="guide-link">Hướng dẫn</a>
+      <a href="#" id="play-link">Trò chơi</a>
+      <a href="#" id="rank-link">Bảng xếp hạng</a>
+    </nav>
+  </header>
+
+  <!-- Trang chủ -->
+  <section id="home" class="page active">
+    <h1>Chào mừng bạn đến với<br>Bài toán Tháp Hà Nội!</h1>
+    <p>Hãy bắt đầu ngay!</p>
+    <div class="buttons">
+      <button id="view-guide">Xem hướng dẫn</button>
+      <button id="play-now">Chơi ngay</button>
+    </div>
+  </section>
+
+<!-- Hướng dẫn -->
+<section id="guide" class="page">
+  <div class="guide-box">
+    <h2>Hướng dẫn chơi Tháp Hà Nội</h2>
+
+    <p>
+      Bài toán Tháp Hà Nội là một trong những bài toán kinh điển trong cấu trúc dữ liệu
+      và giải thuật. Người chơi cần hiểu rõ nguyên tắc di chuyển đĩa và thao tác đúng
+      thứ tự để hoàn thành thử thách. Dưới đây là các quy tắc và hướng dẫn chi tiết khi chơi:
+    </p>
+
+    <ul>
+      <li>Chỉ được di chuyển 1 đĩa trong mỗi lượt.</li>
+      <li>Không được đặt đĩa lớn lên trên đĩa nhỏ.</li>
+      <li>Phải sử dụng cọc B làm cọc trung gian để hỗ trợ quá trình di chuyển.</li>
+      <li>Các đĩa ban đầu được xếp trên cọc A theo thứ tự từ lớn đến nhỏ.</li>
+      <li>Người chơi nhập số đĩa (1–20) để bắt đầu trò chơi.</li>
+    </ul>
+
+    <h3>Các chế độ chơi</h3>
+    <ul>
+      <li>
+        <strong>Chế độ tự chơi:</strong> Người dùng tự thao tác kéo – thả đĩa để giải bài toán theo đúng quy tắc.
+      </li>
+      <li>
+        <strong>Chế độ máy giải:</strong> Tự động chạy giải thuật đệ quy để hiển thị toàn bộ các bước di chuyển từ đầu đến cuối.
+      </li>
+      <li>
+        Nếu người chơi không tự giải được thì có thể bấm 
+        <strong>"Máy giải"</strong> để chương trình hoàn tất bài toán.
+      </li>
+    </ul>
+    <button id="back-home">Quay lại</button>
+  </div>
+</section>
+
+<!-- Trò chơi -->
+<section id="game" class="page">
+  <div class="game-container">
+
+    <!-- Cột trái -->
+    <div class="left-panel">
+      <div class="tower-container">
+        <div class="tower" id="towerA">
+          <div class="base"></div>
+          <div class="pole"></div>
+        </div>
+        <div class="tower" id="towerB">
+          <div class="base"></div>
+          <div class="pole"></div>
+        </div>
+        <div class="tower" id="towerC">
+          <div class="base"></div>
+          <div class="pole"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột phải -->
+    <div class="right-panel">
+      <div class="controls-box">
+
+        <h3>Số đĩa</h3>
+        <input type="number" id="numDisks" min="1" max="20" value="3">
+
+        <h3>Chế độ chơi</h3>
+        <div class="mode-select">
+          <button class="mode-btn active" data-mode="manual">Tự giải</button>
+          <button class="mode-btn" data-mode="auto">Máy giải</button>
+        </div>
+
+        <div class="action-buttons">
+          <button class="start-btn" id="start-game">Bắt đầu</button>
+          <button id="auto-solve">Máy giải</button>
+          <button id="reset-game">Làm lại</button>
+        </div>
+      </div>
+        <!-- Các bước di chuyển -->
+      <div class="steps-panel">
+        <h3>Các bước di chuyển</h3>
+        <ol id="steps-list"></ol>
+      </div>
+    </div>
+  </div>
+
+
+</section>
+  <!-- Bảng xếp hạng -->
+  <section id="ranking" class="page">
+    <h2>Bảng xếp hạng</h2>
+    <table id="rank-table">
+      <thead>
+        <tr>
+          <th>Hạng</th>
+          <th>Số đĩa</th>
+          <th>Bước</th>
+          <th>Thời gian</th>
+          <th>Chế độ</th>
+          <th>Ngày</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="back-rank">Quay lại</button>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
