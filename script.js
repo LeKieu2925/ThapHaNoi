@@ -86,17 +86,7 @@ modeBtns.forEach(btn => {
   };
 });
 // ==================== KHỞI TẠO GAME ====================
-startBtn.onclick = async() => {
-  if (state.mode === "manual") {
-    const playerName = await showModal("Chào mừng bạn đến với Tháp Hà Nội!\nVui lòng nhập tên để lưu bảng xếp hạng:", true);
-    if (playerName && playerName.trim() !== "") {
-      state.playerName = playerName.trim();
-      localStorage.setItem('currentPlayerName', state.playerName); // Lưu tạm để backup
-    } else {
-      state.playerName = "Người chơi";
-      localStorage.setItem('currentPlayerName', "Người chơi");
-    }
-  }
+startBtn.onclick = () => {
   initGame();
 };
 async function initGame() {
@@ -106,6 +96,7 @@ async function initGame() {
     return;
   }
 
+  // Chỉ hỏi tên khi ở chế độ manual
   if (state.mode === "manual") {
     const playerName = await showModal("Chào mừng bạn đến với Tháp Hà Nội!\nVui lòng nhập tên để lưu bảng xếp hạng:", true);
     if (playerName && playerName.trim() !== "") {
@@ -115,19 +106,21 @@ async function initGame() {
       state.playerName = "Người chơi";
       localStorage.setItem('currentPlayerName', "Người chơi");
     }
+  }
 
-    // === THÊM DÒNG NÀY ===
+  resetGameState(); // ← Sau reset, tên bị ghi đè thành "Chưa nhập"
+
+  // === DI CHUYỂN DÒNG NÀY XUỐNG ĐÂY (SAU resetGameState) ===
+  if (state.mode === "manual") {
     document.getElementById('current-player').textContent = state.playerName;
   }
 
-  resetGameState();
-  state.mode = "manual";
   gameStarted = true;
-  autoSolveBtn.disabled = true;
+  autoSolveBtn.disabled = state.mode === "manual";
 
   state.startTime = Date.now();
 
-  console.log("Tạo", n, "đĩa..."); // Dòng debug - bạn có thể xóa sau
+  console.log("Tạo", n, "đĩa...");
 
   for (let i = n; i >= 1; i--) {
     state.towers.A.push(i);
@@ -263,7 +256,7 @@ function resetGameState() {
   stepsList.innerHTML = "";
   clearTowers();
   localStorage.removeItem('currentPlayerName');
-  document.getElementById('current-player').textContent = "Chưa nhập";
+  //document.getElementById('current-player').textContent = "Chưa nhập";
   localStorage.removeItem('currentPlayerName');
 }
 
