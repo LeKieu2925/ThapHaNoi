@@ -14,7 +14,7 @@
       <span>Tháp Hà Nội</span>
     </div>
     <nav>
-      <a href="#" class="active">Trang chủ</a>
+      <a href="#" id="home-link" class="active">Trang chủ</a>
       <a href="#" id="guide-link">Hướng dẫn</a>
       <a href="#" id="play-link">Trò chơi</a>
       <a href="#" id="rank-link">Bảng xếp hạng</a>
@@ -95,13 +95,22 @@
 
         <h3>Số đĩa</h3>
         <input type="number" id="numDisks" min="1" max="20" value="3">
-
+        <h3>Tốc độ mô phỏng</h3>
+        <input 
+          type="range" 
+          id="speedControl" 
+          min="100" 
+          max="2000" 
+          step="100" 
+          value="600"
+        />
+        <p id="speed-label">Tốc độ: Trung bình</p>
         <h3>Chế độ chơi</h3>
+        <h3>Người chơi: <span id="current-player" style="color: #e67e22; font-weight: bold;">Chưa nhập</span></h3>
         <div class="mode-select">
           <button class="mode-btn active" data-mode="manual">Tự giải</button>
           <button class="mode-btn" data-mode="auto">Máy giải</button>
         </div>
-
         <div class="action-buttons">
           <button class="start-btn" id="start-game">Bắt đầu</button>
           <button id="auto-solve">Máy giải</button>
@@ -125,10 +134,10 @@
       <thead>
         <tr>
           <th>Hạng</th>
+          <th>Tên người chơi</th>
           <th>Số đĩa</th>
           <th>Bước</th>
           <th>Thời gian</th>
-          <th>Chế độ</th>
           <th>Ngày</th>
         </tr>
       </thead>
@@ -136,7 +145,22 @@
     </table>
     <button id="back-rank">Quay lại</button>
   </section>
-
+<!-- Modal chung -->
+<div id="custom-modal">
+  <div class="modal-content">
+    <span class="modal-close">&times;</span>
+    <div id="modal-body">
+      <p id="modal-message"></p>
+      <div id="name-input-group">
+        <label for="playerNameInput">Nhập tên của bạn:</label>
+        <input type="text" id="playerNameInput" placeholder="Ví dụ: Kiều Lê" maxlength="20">
+      </div>
+    </div>
+    <div class="modal-buttons">
+      <button id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
   <script src="script.js"></script>
 </body>
 </html>
