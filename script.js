@@ -87,7 +87,7 @@ modeBtns.forEach(btn => {
 });
 // ==================== KHỞI TẠO GAME ====================
 startBtn.onclick = () => {
-  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
+  new Audio('assets/click.wav').play().catch(() => {});
   initGame();
 };
 async function initGame() {
@@ -180,7 +180,7 @@ function animateDiskMove(diskEl, fromTower, toTower, callback) {
         isAnimating = false;
         callback();
         // === THÊM ÂM THANH DI CHUYỂN ĐĨA ===
-        new Audio('assets/mixkit-hard-pop-click-2364.wav').play().catch(() => {}); 
+        new Audio('assets/pop.wav').play().catch(() => {}); 
       }, moveDelay/3);
     }, moveDelay/3);
   }, moveDelay/3);
@@ -337,7 +337,7 @@ async function checkWin() {
     addStep(`HOÀN THÀNH! Thời gian: ${time}s`);
     await showModal(msg);
     saveRecord(time);
-    new Audio('assets/mixkit-fantasy-game-success-notification-270.wav').play().catch(() => {});
+    new Audio('assets/win.wav').play().catch(() => {});
   }
 }
 
@@ -381,32 +381,56 @@ function saveRecord(time) {
 function loadRanking() {
   const records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
   rankTable.innerHTML = "";
+
   if (records.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="7" style="text-align:center; color:#888; padding:20px;">Chưa có kỷ lục nào</td>`;
+    tr.innerHTML = `<td colspan="7" style="text-align:center; color:#888; padding:30px; font-style:italic;">Chưa có kỷ lục nào. Hãy chơi và hoàn thành để lưu bảng xếp hạng nhé! 😊</td>`;
     rankTable.appendChild(tr);
     return;
   }
 
   records.forEach((r, i) => {
     const tr = document.createElement('tr');
-    const trophy = r.efficiency === 1 ? ' 🏆' : '';
+
+    // XỬ LÝ HIỆU SUẤT AN TOÀN HOÀN TOÀN
+    let effDisplay = "?";
+    let effValue = null;
+    if (r.efficiency !== undefined && r.efficiency !== null) {
+      effValue = parseFloat(r.efficiency);
+      if (!isNaN(effValue)) {
+        effDisplay = effValue.toFixed(3);
+      }
+    }
+
+    // Tô màu nền theo hiệu suất
+    if (effValue !== null) {
+      if (effValue <= 1.1) {
+        tr.style.backgroundColor = '#d4edda';   // Xanh nhạt - rất tốt
+      } else if (effValue <= 1.5) {
+        tr.style.backgroundColor = '#fff3cd';   // Vàng nhạt - ổn
+      } else {
+        tr.style.backgroundColor = '#f8d7da';   // Đỏ nhạt - còn thừa nhiều
+      }
+    }
+
+    // Huy hiệu 🏆 cho người giải tối ưu
+    const trophy = effDisplay === "1.000" ? ' 🏆' : '';
+
     tr.innerHTML = `
       <td>${i + 1}</td>
-      <td>${r.playerName || "Người chơi"}</td>
+      <td>${r.playerName || "Người chơi"}${trophy}</td>
       <td>${r.disks || "?"}</td>
       <td>${r.moves || "?"} (${r.minMoves || "?"})}</td>
-      <td>${(r.efficiency || "?").toFixed(3)}</td>
+      <td>${effDisplay}</td>
       <td>${r.time ? r.time + "s" : "?"}</td>
       <td>${r.date || "?"}</td>
     `;
     rankTable.appendChild(tr);
   });
 }
-
 // ==================== NÚT ĐIỀU KHIỂN ====================
 resetBtn.onclick = () => {
-  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
+  new Audio('assets/click.wav').play().catch(() => {});
   resetGameState();
   // Sau reset, hiển thị nút đúng chế độ hiện tại
   if (state.mode === 'manual') {
@@ -419,7 +443,7 @@ resetBtn.onclick = () => {
 };
 
 autoSolveBtn.onclick = async () => {
-  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
+  new Audio('assets/click.wav').play().catch(() => {});
   if (gameStarted) return;
   resetGameState();
   state.mode = "auto";
