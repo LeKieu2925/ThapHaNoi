@@ -87,6 +87,7 @@ modeBtns.forEach(btn => {
 });
 // ==================== KHỞI TẠO GAME ====================
 startBtn.onclick = () => {
+  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
   initGame();
 };
 async function initGame() {
@@ -178,6 +179,8 @@ function animateDiskMove(diskEl, fromTower, toTower, callback) {
         diskEl.style.transform = '';
         isAnimating = false;
         callback();
+        // === THÊM ÂM THANH DI CHUYỂN ĐĨA ===
+        new Audio('assets/mixkit-hard-pop-click-2364.wav').play().catch(() => {}); 
       }, moveDelay/3);
     }, moveDelay/3);
   }, moveDelay/3);
@@ -314,18 +317,27 @@ async function checkWin() {
   if (state.towers.C.length === n) {
     const time = ((Date.now() - state.startTime) / 1000).toFixed(1);
     const minMoves = Math.pow(2, n) - 1;
+    const efficiency = (state.moveCount / minMoves).toFixed(3);
 
-    let msg = `🎉 Chúc mừng ${state.playerName || "Người chơi"}!\n`;
-    msg += `Bạn đã hoàn thành trong ${time}s với ${state.moveCount} bước.\n`;
-    msg += `(Số bước tối thiểu: ${minMoves})`;
+    let msg = `🎉 Chúc mừng ${state.playerName || "Người chơi"}!\n\n`;
+    msg += `Thời gian: ${time}s\n`;
+    msg += `Số bước: ${state.moveCount} (tối thiểu ${minMoves})\n`;
+    msg += `Hiệu suất: ${efficiency}\n\n`;
 
-    if (state.moveCount === minMoves) {
-      msg += `\n\nHOÀN HẢO! Bạn đã giải với số bước tối ưu! 🌟`;
+    if (parseFloat(efficiency) === 1) {
+      msg += `HOÀN HẢO! Bạn đã giải đúng thuật toán tối ưu! 🏆🌟`;
+    } else if (parseFloat(efficiency) <= 1.2) {
+      msg += `RẤT TỐT! Bạn đã giải khá gần tối ưu! 👏`;
+    } else if (parseFloat(efficiency) <= 1.5) {
+      msg += `TỐT! Bạn đã hoàn thành bài toán! 👍`;
+    } else {
+      msg += `Chúc mừng bạn đã hoàn thành! Hãy thử lại để đạt hiệu suất tốt hơn nhé! 💪`;
     }
 
     addStep(`HOÀN THÀNH! Thời gian: ${time}s`);
     await showModal(msg);
     saveRecord(time);
+    new Audio('assets/mixkit-fantasy-game-success-notification-270.wav').play().catch(() => {});
   }
 }
 
@@ -337,35 +349,56 @@ function saveRecord(time) {
     playerName = state.playerName || "Người chơi";
   }
 
+  const n = parseInt(diskCountInput.value);
+  const minMoves = Math.pow(2, n) - 1; // Số bước tối thiểu
+  const efficiency = (state.moveCount / minMoves).toFixed(3); // Hiệu suất (càng gần 1 càng tốt)
+
   const record = {
     playerName: playerName.trim(),
-    disks: parseInt(diskCountInput.value),
+    disks: n,
     moves: state.moveCount,
+    minMoves: minMoves,        // Thêm để hiển thị
+    efficiency: parseFloat(efficiency), // Chuyển thành số để sort dễ
     time: parseFloat(time),
     date: new Date().toLocaleDateString('vi-VN')
   };
 
   let records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
   records.push(record);
-  records.sort((a, b) => a.moves - b.moves || a.time - b.time);
+
+  // === SẮP XẾP MỚI: Công bằng hơn ===
+  records.sort((a, b) => {
+    if (b.disks !== a.disks) return b.disks - a.disks; // Nhiều đĩa hơn xếp trước
+    if (a.efficiency !== b.efficiency) return a.efficiency - b.efficiency; // Hiệu suất tốt hơn (gần 1) xếp trước
+    if (a.moves !== b.moves) return a.moves - b.moves; // Ít bước hơn
+    return a.time - b.time; // Nhanh hơn
+  });
+
   records = records.slice(0, 10);
   localStorage.setItem('hanoiRecords', JSON.stringify(records));
-
-  // === ĐẶT DÒNG NÀY Ở ĐÂY ===
   localStorage.removeItem('currentPlayerName');
 }
 function loadRanking() {
   const records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
   rankTable.innerHTML = "";
+  if (records.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="7" style="text-align:center; color:#888; padding:20px;">Chưa có kỷ lục nào</td>`;
+    rankTable.appendChild(tr);
+    return;
+  }
+
   records.forEach((r, i) => {
     const tr = document.createElement('tr');
+    const trophy = r.efficiency === 1 ? ' 🏆' : '';
     tr.innerHTML = `
       <td>${i + 1}</td>
-      <td>${r.playerName}</td>
-      <td>${r.disks}</td>
-      <td>${r.moves}</td>
-      <td>${r.time}s</td>
-      <td>${r.date}</td>
+      <td>${r.playerName || "Người chơi"}</td>
+      <td>${r.disks || "?"}</td>
+      <td>${r.moves || "?"} (${r.minMoves || "?"})}</td>
+      <td>${(r.efficiency || "?").toFixed(3)}</td>
+      <td>${r.time ? r.time + "s" : "?"}</td>
+      <td>${r.date || "?"}</td>
     `;
     rankTable.appendChild(tr);
   });
@@ -373,6 +406,7 @@ function loadRanking() {
 
 // ==================== NÚT ĐIỀU KHIỂN ====================
 resetBtn.onclick = () => {
+  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
   resetGameState();
   // Sau reset, hiển thị nút đúng chế độ hiện tại
   if (state.mode === 'manual') {
@@ -385,6 +419,7 @@ resetBtn.onclick = () => {
 };
 
 autoSolveBtn.onclick = async () => {
+  new Audio('assets/mixkit-fast-double-click-on-mouse-275.wav').play().catch(() => {});
   if (gameStarted) return;
   resetGameState();
   state.mode = "auto";
