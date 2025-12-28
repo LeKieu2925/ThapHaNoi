@@ -402,25 +402,13 @@ function loadRanking() {
       }
     }
 
-    // Tô màu nền theo hiệu suất
-    if (effValue !== null) {
-      if (effValue <= 1.1) {
-        tr.style.backgroundColor = '#d4edda';   // Xanh nhạt - rất tốt
-      } else if (effValue <= 1.5) {
-        tr.style.backgroundColor = '#fff3cd';   // Vàng nhạt - ổn
-      } else {
-        tr.style.backgroundColor = '#f8d7da';   // Đỏ nhạt - còn thừa nhiều
-      }
-    }
-
-    // Huy hiệu 🏆 cho người giải tối ưu
     const trophy = effDisplay === "1.000" ? ' 🏆' : '';
 
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td>${r.playerName || "Người chơi"}${trophy}</td>
       <td>${r.disks || "?"}</td>
-      <td>${r.moves || "?"} (${r.minMoves || "?"})}</td>
+      <td>${r.moves || "?"} (${r.minMoves || "?"})</td>
       <td>${effDisplay}</td>
       <td>${r.time ? r.time + "s" : "?"}</td>
       <td>${r.date || "?"}</td>
