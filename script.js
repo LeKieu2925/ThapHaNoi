@@ -30,14 +30,26 @@ let autoRunning = false;
 const speedControl = document.getElementById("speedControl");
 const speedLabel = document.getElementById("speed-label");
 
-let moveDelay = Number(speedControl.value);
+
+const MAX_DELAY = 2000; // giá trị max của range
+const MIN_DELAY = 100;  // giá trị min của range
+
+let moveDelay = MAX_DELAY - Number(speedControl.value) + MIN_DELAY;
 
 speedControl.addEventListener("input", () => {
-  moveDelay = Number(speedControl.value);
-  if (moveDelay <= 300) speedLabel.textContent = "Tốc độ: Rất nhanh";
-  else if (moveDelay <= 700) speedLabel.textContent = "Tốc độ: Trung bình";
-  else if (moveDelay <= 1200) speedLabel.textContent = "Tốc độ: Chậm";
-  else speedLabel.textContent = "Tốc độ: Rất chậm";
+
+  moveDelay = MAX_DELAY - Number(speedControl.value) + MIN_DELAY;
+
+  const value = Number(speedControl.value);
+  if (value >= 1700) {
+    speedLabel.textContent = "Tốc độ: Rất nhanh";
+  } else if (value >= 1200) {
+    speedLabel.textContent = "Tốc độ: Nhanh";
+  } else if (value >= 700) {
+    speedLabel.textContent = "Tốc độ: Trung bình";
+  } else {
+    speedLabel.textContent = "Tốc độ: Chậm";
+  }
 });
 
 // ==================== TRẠNG THÁI ====================
@@ -111,7 +123,6 @@ async function initGame() {
 
   resetGameState(); // ← Sau reset, tên bị ghi đè thành "Chưa nhập"
 
-  // === DI CHUYỂN DÒNG NÀY XUỐNG ĐÂY (SAU resetGameState) ===
   if (state.mode === "manual") {
     document.getElementById('current-player').textContent = state.playerName;
   }
