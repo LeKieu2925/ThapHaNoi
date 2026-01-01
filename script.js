@@ -109,30 +109,20 @@ async function initGame() {
     return;
   }
 
-  // Chỉ hỏi tên khi ở chế độ manual
+  // Reset trước để tránh lưu trạng thái cũ
+  resetGameState();
+
+  // tên người chơi
   if (state.mode === "manual") {
     const playerName = await showModal("Chào mừng bạn đến với Tháp Hà Nội!\nVui lòng nhập tên để lưu bảng xếp hạng:", true);
-    if (playerName && playerName.trim() !== "") {
-      state.playerName = playerName.trim();
-      localStorage.setItem('currentPlayerName', state.playerName);
-    } else {
-      state.playerName = "Người chơi";
-      localStorage.setItem('currentPlayerName', "Người chơi");
-    }
-  }
-
-  resetGameState(); // ← Sau reset, tên bị ghi đè thành "Chưa nhập"
-
-  if (state.mode === "manual") {
+    state.playerName = (playerName && playerName.trim() !== "") ? playerName.trim() : "Người chơi";
+    localStorage.setItem('currentPlayerName', state.playerName);
     document.getElementById('current-player').textContent = state.playerName;
   }
 
   gameStarted = true;
   autoSolveBtn.disabled = state.mode === "manual";
-
   state.startTime = Date.now();
-
-  console.log("Tạo", n, "đĩa...");
 
   for (let i = n; i >= 1; i--) {
     state.towers.A.push(i);
@@ -140,7 +130,8 @@ async function initGame() {
   }
 
   renderTowers();
-  addStep(`Khởi tạo ${n} đĩa trên cọc A (chế độ người chơi).`);
+  addStep(`Khởi tạo ${n} đĩa trên cọc A (chế độ ${state.mode === 'manual' ? 'tự chơi' : 'máy giải'}).`);
+  addStep(`Số bước tối thiểu: ${Math.pow(2, n) - 1}`);
 }
 // ==================== CÁC HÀM HỖ TRỢ ====================
 function createDisk(size, towerId) {
@@ -269,59 +260,141 @@ function resetGameState() {
   autoSolveBtn.disabled = false;
   stepsList.innerHTML = "";
   clearTowers();
-  localStorage.removeItem('currentPlayerName');
-  //document.getElementById('current-player').textContent = "Chưa nhập";
-  localStorage.removeItem('currentPlayerName');
+  localStorage.removeItem('currentPlayerName'); // Chỉ giữ 1 dòng này
 }
+// ĐỆ QUY khi n ≤ 10 
+async function autoSolveRecursive(n, from, to, aux) {
+  if (n === 0) return;
 
-// ==================== AUTO SOLVE ====================
-function generateMoves(n, from, to, aux, moves = []) {
-  if (n === 0) return moves;
-  generateMoves(n - 1, from, aux, to, moves);
-  moves.push([from, to]);
-  generateMoves(n - 1, aux, to, from, moves);
-  return moves;
-}
+  // Chuyển n-1 đĩa sang cọc trung gian
+  await autoSolveRecursive(n - 1, from, aux, to);
 
-function playFastAnimation() {
-  const n = parseInt(diskCountInput.value);
-  const moves = generateMoves(n, "A", "C", "B");
+  // Di chuyển đĩa lớn nhất
+  const disk = state.towers[from].pop();
+  state.towers[to].push(disk);
+  state.moveCount++;
 
-  stepsList.innerHTML = "";
-  addStep(`Máy giải ${n} đĩa...`);
+  const diskEl = document.querySelector(`.disk[data-size="${disk}"]`);
 
-  autoRunning = true;
-  let index = 0;
-
-  function doMove() {
-    if (!autoRunning) return;
-    if (index >= moves.length) {
-      const time = ((Date.now() - state.startTime) / 1000).toFixed(1);
-      addStep(`✔ Hoàn thành trong ${time}s`);
-      saveRecord(time);
-      autoRunning = false;
-      return;
-    }
-
-    const [from, to] = moves[index];
-    const disk = state.towers[from].pop();
-    state.towers[to].push(disk);
-    state.moveCount++;
-
-    const diskEl = document.querySelector(`.disk[data-size="${disk}"]`);
-
+  await new Promise(resolve => {
     animateDiskMove(diskEl, towers[from], towers[to], () => {
       towers[to].appendChild(diskEl);
       renderTowers();
       addStep(`Bước ${state.moveCount}: Di chuyển đĩa ${disk} từ ${from} → ${to}`);
-      index++;
-      setTimeout(doMove, moveDelay);
+      resolve();
     });
+  });
+
+  // Chuyển n-1 đĩa từ trung gian sang đích
+  await autoSolveRecursive(n - 1, aux, to, from);
+}
+async function playFastAnimation() {
+  const n = parseInt(diskCountInput.value);
+  if (isNaN(n) || n < 1 || n > 20) return;
+
+  const totalSteps = Math.pow(2, n) - 1;
+  stepsList.innerHTML = "";
+  
+  const method = n <= 10 ? "giải thuật đệ quy trực tiếp" : "mô phỏng đệ quy bằng stack";
+  addStep(`Máy giải ${n} đĩa – ${totalSteps.toLocaleString()} bước tối thiểu (${method})...`);
+
+  if (n > 10) {
+    addStep(`Đang tối ưu: Tắt hiển thị chi tiết mỗi bước!`);
+    alert(`Với ${n} đĩa có ${totalSteps.toLocaleString()} bước!\nChi tiết bước sẽ không hiển thị đầy đủ để chạy nhanh! 😊`);
   }
 
-  doMove();
+  autoRunning = true;
+  state.startTime = Date.now();
+
+  const progressBar = document.getElementById('progressBar');
+  if (progressBar) progressBar.style.width = '0%';
+
+  if (n <= 10) {
+    await autoSolveRecursive(n, "A", "C", "B");
+  } else {
+    const moves = getAllMoves(n, "A", "C", "B");
+
+    const progressInterval = Math.max(Math.floor(moves.length / 100), 1);
+    let progressLine = null; // Dòng tiến độ duy nhất
+
+    for (let i = 0; i < moves.length && autoRunning; i++) {
+      const [from, to] = moves[i];
+      const disk = state.towers[from].pop();
+      state.towers[to].push(disk);
+      state.moveCount++;
+
+      const diskEl = document.querySelector(`.disk[data-size="${disk}"]`);
+      towers[to].appendChild(diskEl);
+
+      // Render ít hơn để mượt
+      if (i % 2000 === 0 || i === moves.length - 1) {
+        renderTowers();
+      }
+
+      // Cập nhật progress bar
+      if (progressBar) {
+        progressBar.style.width = `${((i + 1) / moves.length * 100).toFixed(1)}%`;
+      }
+
+      if (i % progressInterval === 0 || i === moves.length - 1) {
+        if (!progressLine) {
+          progressLine = document.createElement('li');
+          progressLine.className = 'progress-line';
+          progressLine.textContent = 'Tiến độ: 0%';
+          stepsList.appendChild(progressLine);
+        }
+        const percent = ((i + 1) / moves.length * 100).toFixed(1);
+        progressLine.textContent = `Tiến độ: ${percent}% (bước ${ (i + 1).toLocaleString() } / ${totalSteps.toLocaleString()})`;
+        stepsList.scrollTop = stepsList.scrollHeight;
+      }
+
+      // Delay mượt hơn
+      if (i % 2000 === 0) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    }
+
+    renderTowers(); // Render lần cuối
+  }
+
+  if (autoRunning) {
+    const time = ((Date.now() - state.startTime) / 1000).toFixed(1);
+    // Xóa dòng tiến độ cũ
+    const oldProgressLine = stepsList.querySelector('.progress-line');
+    if (oldProgressLine) oldProgressLine.remove();
+    addStep(`✔ HOÀN THÀNH trong ${time} giây! 🎉`);
+    new Audio('assets/win.wav').play().catch(() => {});
+    if (progressBar) progressBar.style.width = '100%';
+    autoRunning = false;
+  }
 }
 
+function getAllMoves(n, source = 'A', target = 'C', auxiliary = 'B') {
+  const moves = [];
+  const stack = [];
+  stack.push({ n, source, target, auxiliary, stage: 0 });
+
+  while (stack.length > 0) {
+    const task = stack[stack.length - 1];
+
+    if (task.n === 0) {
+      stack.pop();
+      continue;
+    }
+
+    if (task.stage === 0) {
+      task.stage = 1;
+      stack.push({ n: task.n - 1, source: task.source, target: task.auxiliary, auxiliary: task.target, stage: 0 });
+    } else if (task.stage === 1) {
+      moves.push([task.source, task.target]);
+      task.stage = 2;
+    } else {
+      stack.pop();
+      stack.push({ n: task.n - 1, source: task.auxiliary, target: task.target, auxiliary: task.source, stage: 0 });
+    }
+  }
+  return moves;
+}
 // ==================== CHECK WIN & RANKING ====================
 async function checkWin() {
   const n = parseInt(diskCountInput.value);
@@ -361,15 +434,15 @@ function saveRecord(time) {
   }
 
   const n = parseInt(diskCountInput.value);
-  const minMoves = Math.pow(2, n) - 1; // Số bước tối thiểu
-  const efficiency = (state.moveCount / minMoves).toFixed(3); // Hiệu suất (càng gần 1 càng tốt)
+  const minMoves = Math.pow(2, n) - 1; 
+  const efficiency = (state.moveCount / minMoves).toFixed(3); 
 
   const record = {
     playerName: playerName.trim(),
     disks: n,
     moves: state.moveCount,
-    minMoves: minMoves,        // Thêm để hiển thị
-    efficiency: parseFloat(efficiency), // Chuyển thành số để sort dễ
+    minMoves: minMoves,        
+    efficiency: parseFloat(efficiency), 
     time: parseFloat(time),
     date: new Date().toLocaleDateString('vi-VN')
   };
@@ -377,10 +450,10 @@ function saveRecord(time) {
   let records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
   records.push(record);
 
-  // === SẮP XẾP MỚI: Công bằng hơn ===
+ // sắp xếp mới
   records.sort((a, b) => {
-    if (b.disks !== a.disks) return b.disks - a.disks; // Nhiều đĩa hơn xếp trước
-    if (a.efficiency !== b.efficiency) return a.efficiency - b.efficiency; // Hiệu suất tốt hơn (gần 1) xếp trước
+    if (b.disks !== a.disks) return b.disks - a.disks; 
+    if (a.efficiency !== b.efficiency) return a.efficiency - b.efficiency; // Hiệu suất gần 1 xếp trước
     if (a.moves !== b.moves) return a.moves - b.moves; // Ít bước hơn
     return a.time - b.time; // Nhanh hơn
   });
@@ -390,8 +463,15 @@ function saveRecord(time) {
   localStorage.removeItem('currentPlayerName');
 }
 function loadRanking() {
-  const records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
+  let records = [];
+  try {
+    records = JSON.parse(localStorage.getItem('hanoiRecords') || '[]');
+  } catch (e) {
+    console.error("Lỗi đọc dữ liệu xếp hạng:", e);
+    records = [];
+  }
   rankTable.innerHTML = "";
+  
 
   if (records.length === 0) {
     const tr = document.createElement('tr');
@@ -403,7 +483,7 @@ function loadRanking() {
   records.forEach((r, i) => {
     const tr = document.createElement('tr');
 
-    // XỬ LÝ HIỆU SUẤT AN TOÀN HOÀN TOÀN
+    // XỬ LÝ HIỆU SUẤT 
     let effDisplay = "?";
     let effValue = null;
     if (r.efficiency !== undefined && r.efficiency !== null) {
@@ -431,7 +511,7 @@ function loadRanking() {
 resetBtn.onclick = () => {
   new Audio('assets/click.wav').play().catch(() => {});
   resetGameState();
-  // Sau reset, hiển thị nút đúng chế độ hiện tại
+  
   if (state.mode === 'manual') {
     startBtn.style.display = 'inline-block';
     autoSolveBtn.style.display = 'none';
@@ -468,15 +548,15 @@ const modalBody = document.getElementById('modal-body');
 const modalOk = document.getElementById('modal-ok');
 const modalClose = document.querySelector('.modal-close');
 
-let resolveModalPromise; // Để chờ người dùng bấm OK
+let resolveModalPromise; 
 
 function showModal(message, showInput = false) {
   return new Promise((resolve) => {
     modalMessage.textContent = message;
     
-    // Hiển thị hoặc ẩn phần nhập tên
+   
     const inputGroup = document.getElementById('name-input-group');
-    if (!inputGroup) return; // An toàn
+    if (!inputGroup) return; 
     if (showInput) {
       inputGroup.style.display = 'block';
       document.getElementById('playerNameInput').focus();
@@ -487,14 +567,14 @@ function showModal(message, showInput = false) {
     customModal.style.display = 'flex';
     resolveModalPromise = resolve;
 
-    // Xử lý bấm OK
+  
     modalOk.onclick = () => {
       let name = "Người chơi";
       if (showInput) {
         name = document.getElementById('playerNameInput').value.trim();
         if (name === "") {
           modalMessage.textContent = "Vui lòng nhập tên người chơi!";
-          return; // Không đóng modal
+          return; 
         }
       }
       customModal.style.display = 'none';
@@ -503,10 +583,10 @@ function showModal(message, showInput = false) {
   });
 }
 
-// Đóng modal bằng nút X hoặc click ngoài
+
 modalClose.onclick = () => { customModal.style.display = 'none'; };
 customModal.onclick = (e) => {
   if (e.target === customModal) customModal.style.display = 'none';
 };
-// Khởi động
+
 loadRanking();
